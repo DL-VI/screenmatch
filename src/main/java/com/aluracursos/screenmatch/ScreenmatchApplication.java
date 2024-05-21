@@ -15,7 +15,7 @@ public class ScreenmatchApplication implements CommandLineRunner {
 	}
 
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args) throws Exception {//metodo de la interfaz CommanLineRunner, que se ejecuta depues de que se cargue el proyecto de Spring Boot
 		var consumoApi = new ConsumoApi();
 		String json = consumoApi.obtenerDatos("https://www.omdbapi.com/?t=game+of+thrones&apikey=22d0b088");
 		System.out.println(json);
