@@ -1,14 +1,9 @@
 package com.aluracursos.screenmatch.principal;
 
-import com.aluracursos.screenmatch.model.DatosEpisodio;
-import com.aluracursos.screenmatch.model.DatosSerie;
-import com.aluracursos.screenmatch.model.DatosTemporada;
-import com.aluracursos.screenmatch.model.Episodio;
+import com.aluracursos.screenmatch.model.*;
 import com.aluracursos.screenmatch.service.ConsumoApi;
 import com.aluracursos.screenmatch.service.ConvierteDatos;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -18,25 +13,47 @@ public class Principal {
     private static final String URL_BASE = "https://www.omdbapi.com/?t=";
     private static final String API_KEY = "&apikey=22d0b088";
     private ConvierteDatos convierteDatos = new ConvierteDatos();
+    private List<DatosSerie> listaDatosSerie = new ArrayList<>();
 
+    public void mostrarMenu()  {
+        var opcion = -1;
 
-    public void mostrarMenu() {
-        System.out.print("Nombre de la Serie: ");
-        //busca los datos generales de las series
-        var nombreSerie = scanner.nextLine();
-        var json = consumoApi.obtenerDatos(URL_BASE + nombreSerie.replace(" ", "+") + API_KEY);
-        var datos = convierteDatos.obtenerDatos(json, DatosSerie.class);
-        System.out.println("\n" + datos);
-        //busca los datos de todas las temporadas
-        List<DatosTemporada> temporadas = new ArrayList<>();
-        for (int i = 1; i <= datos.totalDeTemporadas(); i++) {
-            json = consumoApi.obtenerDatos(URL_BASE + nombreSerie.replace(" ", "+") + "&Season=" + i + API_KEY);
-            temporadas.add(convierteDatos.obtenerDatos(json, DatosTemporada.class));
+        while (opcion != 0) {
+            var menu = """
+                    
+                    1 - Buscar Serie
+                    2 - Buscar Episodio
+                    3 - Mostrar series buscadas
+                    
+                    0 - Salir
+                    """;
+
+            System.out.println(menu);
+            System.out.print("Opcion:");
+            opcion = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (opcion) {
+                case 1:
+                    buscarSerieWeb();
+                    break;
+                case 2:
+                    buscarEpisodioPorSerie();
+                    break;
+                case 3:
+                    mostrarSeriesBuscadas();
+                    break;
+                case 0:
+                    System.out.println("Cerrando la aplicacion...");
+                    break;
+                default:
+                    System.out.println("Opcion no valida.");
+            }
         }
-        //temporadas.forEach(System.out::println);
 
-        //mostrar solo el titulo de los episodios para la temporada con funcion lambda
-        temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
+
+        /*//mostrar solo el titulo de los episodios para la temporada con funcion lambda
+        //temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
 
         //convertir toda la informacion a una lista del tipo DatoEpisodio
         List<DatosEpisodio> datosEpisodios = temporadas.stream().flatMap(t -> t.episodios().stream()).collect(Collectors.toList());
@@ -49,7 +66,7 @@ public class Principal {
                 .sorted(Comparator.comparing(DatosEpisodio::evaluacion).reversed())//ordena la lista de menor a mayor de acuerda a la evaluacion
                 .peek(e -> System.out.println("Segundo ordenacion (M>m)" + e))
                 .map(e -> e.titulo().toUpperCase())
-                .peek(e-> System.out.println("Tercer filtro Mayusculas (m>M" + e))
+                .peek(e -> System.out.println("Tercer filtro Mayusculas (m>M" + e))
                 .limit(5)
                 .forEach(System.out::println);//inverte la lista de mayor a menor y se limita a las 5 primeras
 
@@ -69,7 +86,7 @@ public class Principal {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         episodios.stream().filter(e -> e.getFechaLanczamiento() != null && e.getFechaLanczamiento().isAfter(fechaBusqueda))
-                .forEach(e-> System.out.println(
+                .forEach(e -> System.out.println(
                         "Temporada: " + e.getTemporada() +
                                 ", Episodio:" + e.getTitulo() +
                                 ", Fecha lanzamiento:" + e.getFechaLanczamiento().format(dtf)
@@ -98,6 +115,41 @@ public class Principal {
         DoubleSummaryStatistics ets = episodios.stream()
                 .filter(e -> e.getEvaluacion() > 0.0)
                 .collect(Collectors.summarizingDouble(Episodio::getEvaluacion));
-        System.out.println(ets);
+        System.out.println(ets);*/
+    }
+
+    private void mostrarSeriesBuscadas() {
+        List<Serie> series = new ArrayList<>();
+        series = listaDatosSerie.stream().map(Serie::new)
+                .collect(Collectors.toList());
+
+        series.stream().sorted(Comparator.comparing(Serie::getGenero))
+                .forEach(System.out::println);
+    }
+
+    public DatosSerie getDatosSerie() {
+        System.out.print("Nombre de la Serie: ");
+        //busca los datos generales de las series
+        var nombreSerie = scanner.nextLine();
+        var json = consumoApi.obtenerDatos(URL_BASE + nombreSerie.replace(" ", "+") + API_KEY);
+        System.out.println(json);
+        return convierteDatos.obtenerDatos(json, DatosSerie.class);
+    }
+
+    private void buscarSerieWeb() {
+        DatosSerie datos = getDatosSerie();
+        listaDatosSerie.add(datos);
+        System.out.println(datos);
+    }
+
+    public void buscarEpisodioPorSerie() {
+        DatosSerie datosSerie = getDatosSerie();
+        //busca los datos de todas las temporadas
+        List<DatosTemporada> temporadas = new ArrayList<>();
+        for (int i = 1; i <= datosSerie.totalDeTemporadas(); i++) {
+            var json = consumoApi.obtenerDatos(URL_BASE + datosSerie.titulo().replace(" ", "+") + "&Season=" + i + API_KEY);
+            temporadas.add(convierteDatos.obtenerDatos(json, DatosTemporada.class));
+        }
+        temporadas.forEach(System.out::println);
     }
 }
