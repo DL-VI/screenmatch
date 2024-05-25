@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)//ignora los atributos del Json que no implementamos en el record
 public record DatosSerie(@JsonAlias("Title") String titulo,
+                         @JsonAlias("Genre") String genero,
+                         @JsonAlias("Plot") String sinopsis,
+                         @JsonAlias("Poster") String poster,
+                         @JsonAlias("Actors") String actores,
                          @JsonAlias("totalSeasons") Integer totalDeTemporadas,
                          //@JsonAlias identifica el atributo del Json y lo guardar en la variable que declaramos
                          @JsonAlias("imdbRating") String evaluacion){
